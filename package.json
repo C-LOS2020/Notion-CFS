@@ -1,0 +1,25 @@
+{
+  "name": "notion-cfs",
+  "version": "1.0.0",
+  "description": "Multi-workspace Notion MCP server for Claude — Claude File System",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "notion-cfs": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.10.2",
+    "@notionhq/client": "^2.2.15",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

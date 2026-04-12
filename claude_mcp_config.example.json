@@ -1,0 +1,22 @@
+{
+  "_comment": "Add this block to ~/.claude.json under 'mcpServers' to register Notion-CFS with Claude Code.",
+  "mcpServers": {
+    "notion-cfs": {
+      "command": "node",
+      "args": ["/absolute/path/to/Notion-CFS/dist/index.js"],
+      "env": {
+        "NOTION_TOKEN_1": "secret_bale_token_here",
+        "NOTION_WORKSPACE_NAME_1": "bale",
+        "NOTION_WORKSPACE_DESCRIPTION_1": "B.A.L.E. workspace",
+
+        "NOTION_TOKEN_2": "secret_fusion_token_here",
+        "NOTION_WORKSPACE_NAME_2": "fusion",
+        "NOTION_WORKSPACE_DESCRIPTION_2": "Fusion Superplex",
+
+        "NOTION_TOKEN_3": "secret_personal_token_here",
+        "NOTION_WORKSPACE_NAME_3": "personal",
+        "NOTION_WORKSPACE_DESCRIPTION_3": "Personal notes"
+      }
+    }
+  }
+}

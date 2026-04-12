@@ -1,0 +1,19 @@
+{
+  "workspaces": [
+    {
+      "name": "bale",
+      "token": "secret_your_bale_workspace_token",
+      "description": "B.A.L.E. content, branding, and roadmap workspace"
+    },
+    {
+      "name": "fusion",
+      "token": "secret_your_fusion_workspace_token",
+      "description": "Fusion Superplex solar installation operations"
+    },
+    {
+      "name": "personal",
+      "token": "secret_your_personal_token",
+      "description": "Personal notes, reading list, and daily reflections"
+    }
+  ]
+}
