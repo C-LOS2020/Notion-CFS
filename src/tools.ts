@@ -58,6 +58,60 @@ export function buildTools(workspaces: NotionWorkspace[]): ToolDef[] {
       },
     },
 
+    // ── notion_verify_access ──────────────────────────────────────────
+    {
+      definition: {
+        name: 'notion_verify_access',
+        description:
+          'Verify that Claude can reach each configured Notion workspace by calling the Notion API. Reports success or failure per workspace.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            workspace: {
+              type: 'string',
+              description: `Workspace to verify: ${wsNames} — or "all" (default).`,
+            },
+          },
+        },
+      },
+      handler: async (args) => {
+        const wsName = str(args.workspace) || undefined;
+        const targets = resolveWorkspaces(workspaces, wsName);
+
+        const lines: string[] = [
+          `Verifying access to ${targets.length === workspaces.length ? 'all' : targets.length} workspace(s)…`,
+          '',
+        ];
+
+        let successCount = 0;
+        for (const ws of targets) {
+          try {
+            const me = await ws.client.users.me({}) as Record<string, unknown>;
+            const botName = str((me as Record<string, unknown>).name) || '(unnamed bot)';
+            const wsInfo = (me as Record<string, unknown>).bot as Record<string, unknown> | undefined;
+            const notionWsName = wsInfo?.workspace_name
+              ? str(wsInfo.workspace_name)
+              : undefined;
+            lines.push(
+              `  ✓ ${ws.name}${ws.description ? ` (${ws.description})` : ''}` +
+              ` — bot: ${botName}` +
+              (notionWsName ? ` | Notion workspace: ${notionWsName}` : '')
+            );
+            successCount++;
+          } catch (e) {
+            lines.push(
+              `  ✗ ${ws.name}${ws.description ? ` (${ws.description})` : ''}` +
+              ` — ERROR: ${(e as Error).message}`
+            );
+          }
+        }
+
+        lines.push('');
+        lines.push(`Result: ${successCount}/${targets.length} workspace(s) accessible.`);
+        return ok(lines.join('\n'));
+      },
+    },
+
     // ── notion_search ─────────────────────────────────────────────────
     {
       definition: {
