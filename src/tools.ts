@@ -33,6 +33,37 @@ function bool(v: unknown, def: boolean): boolean {
   return typeof v === 'boolean' ? v : def;
 }
 
+function parseProperty(val: Record<string, unknown>): string {
+  switch (val.type) {
+    case 'title':
+      return richTextToPlain(val.title as Array<{ plain_text: string }>);
+    case 'rich_text':
+      return richTextToPlain(val.rich_text as Array<{ plain_text: string }>);
+    case 'select':
+      return str((val.select as Record<string, unknown>)?.name);
+    case 'multi_select':
+      return (val.multi_select as Array<{ name: string }>).map((o) => o.name).join(', ');
+    case 'checkbox':
+      return String(val.checkbox);
+    case 'date':
+      return str((val.date as Record<string, unknown>)?.start);
+    case 'number':
+      return String(val.number ?? '');
+    case 'status':
+      return str((val.status as Record<string, unknown>)?.name);
+    case 'people':
+      return (val.people as Array<Record<string, unknown>>).map((p) => str(p.name)).join(', ');
+    case 'email':
+      return str(val.email);
+    case 'phone_number':
+      return str(val.phone_number);
+    case 'url':
+      return str(val.url);
+    default:
+      return '';
+  }
+}
+
 // ─── Tool builder ──────────────────────────────────────────────────────────
 
 export function buildTools(workspaces: NotionWorkspace[]): ToolDef[] {
@@ -179,47 +210,7 @@ export function buildTools(workspaces: NotionWorkspace[]): ToolDef[] {
             for (const [key, val] of Object.entries(
               page.properties as Record<string, Record<string, unknown>>
             )) {
-              let value = '';
-              switch (val.type) {
-                case 'title':
-                  value = richTextToPlain(
-                    val.title as Array<{ plain_text: string }>
-                  );
-                  break;
-                case 'rich_text':
-                  value = richTextToPlain(
-                    val.rich_text as Array<{ plain_text: string }>
-                  );
-                  break;
-                case 'select':
-                  value = str((val.select as Record<string, unknown>)?.name);
-                  break;
-                case 'multi_select':
-                  value = (
-                    val.multi_select as Array<{ name: string }>
-                  )
-                    .map((o) => o.name)
-                    .join(', ');
-                  break;
-                case 'checkbox':
-                  value = String(val.checkbox);
-                  break;
-                case 'date':
-                  value = str(
-                    (val.date as Record<string, unknown>)?.start
-                  );
-                  break;
-                case 'number':
-                  value = String(val.number ?? '');
-                  break;
-                case 'status':
-                  value = str(
-                    (val.status as Record<string, unknown>)?.name
-                  );
-                  break;
-                default:
-                  value = `(${val.type})`;
-              }
+              const value = parseProperty(val);
               lines.push(`  ${key}: ${value}`);
             }
           }
@@ -465,7 +456,7 @@ export function buildTools(workspaces: NotionWorkspace[]): ToolDef[] {
       definition: {
         name: 'notion_query_database',
         description:
-          'Query a Notion database and list its entries (titles and IDs).',
+          'Query a Notion database with optional filters (status, date range) and sorting. Returns full property details for each entry across any connected workspace.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -481,6 +472,50 @@ export function buildTools(workspaces: NotionWorkspace[]): ToolDef[] {
               type: 'number',
               description: 'Max entries to return (default 20, max 100).',
             },
+            filter_status: {
+              type: 'string',
+              description:
+                'Filter entries where a status/select property equals this value (e.g. "In Progress", "Done").',
+            },
+            filter_status_property: {
+              type: 'string',
+              description:
+                'Name of the status or select property to filter on (default "Status").',
+            },
+            filter_assignee: {
+              type: 'string',
+              description:
+                'Filter entries where a people property contains this person\'s name (partial match).',
+            },
+            filter_assignee_property: {
+              type: 'string',
+              description:
+                'Name of the people property to filter on (default "Assignee").',
+            },
+            filter_date_after: {
+              type: 'string',
+              description:
+                'ISO 8601 date (YYYY-MM-DD). Return entries with the date property after this date.',
+            },
+            filter_date_before: {
+              type: 'string',
+              description:
+                'ISO 8601 date (YYYY-MM-DD). Return entries with the date property before this date.',
+            },
+            filter_date_property: {
+              type: 'string',
+              description:
+                'Name of the date property to filter on (default "Date").',
+            },
+            sort_by: {
+              type: 'string',
+              description: 'Property name to sort results by.',
+            },
+            sort_direction: {
+              type: 'string',
+              enum: ['ascending', 'descending'],
+              description: 'Sort direction (default "descending").',
+            },
           },
           required: ['database_id'],
         },
@@ -490,22 +525,102 @@ export function buildTools(workspaces: NotionWorkspace[]): ToolDef[] {
         const wsName = str(args.workspace) || undefined;
         const pageSize = Math.min(num(args.page_size, 20), 100);
 
+        const filterStatus = str(args.filter_status) || undefined;
+        const filterStatusProp = str(args.filter_status_property) || 'Status';
+        const filterAssignee = str(args.filter_assignee) || undefined;
+        const filterAssigneeProp = str(args.filter_assignee_property) || 'Assignee';
+        const filterDateAfter = str(args.filter_date_after) || undefined;
+        const filterDateBefore = str(args.filter_date_before) || undefined;
+        const filterDateProp = str(args.filter_date_property) || 'Date';
+        const sortBy = str(args.sort_by) || undefined;
+        const sortDir = (str(args.sort_direction) || 'descending') as 'ascending' | 'descending';
+
         try {
           const target = resolveWorkspaces(workspaces, wsName)[0];
+
+          // Build compound filter
+          const andClauses: unknown[] = [];
+
+          if (filterStatus) {
+            // Try both status and select property types
+            andClauses.push({
+              or: [
+                { property: filterStatusProp, status: { equals: filterStatus } },
+                { property: filterStatusProp, select: { equals: filterStatus } },
+              ],
+            });
+          }
+
+          if (filterDateAfter) {
+            andClauses.push({
+              property: filterDateProp,
+              date: { after: filterDateAfter },
+            });
+          }
+
+          if (filterDateBefore) {
+            andClauses.push({
+              property: filterDateProp,
+              date: { before: filterDateBefore },
+            });
+          }
+
+          const filter =
+            andClauses.length === 1
+              ? andClauses[0]
+              : andClauses.length > 1
+                ? { and: andClauses }
+                : undefined;
+
+          const sorts = sortBy
+            ? [{ property: sortBy, direction: sortDir }]
+            : undefined;
+
           const res = await target.client.databases.query({
             database_id: dbId,
             page_size: pageSize,
+            filter: filter as never,
+            sorts: sorts as never,
           });
 
+          // Post-filter by assignee name (Notion API requires user ID for people filters)
+          const results = filterAssignee
+            ? res.results.filter((item: Record<string, unknown>) => {
+                const obj = item as Record<string, unknown>;
+                const props = obj.properties as Record<string, Record<string, unknown>> | undefined;
+                if (!props) return false;
+                const peopleProp = props[filterAssigneeProp];
+                if (!peopleProp) return false;
+                const people = peopleProp.people as Array<Record<string, unknown>> | undefined;
+                return people?.some((p) =>
+                  str(p.name).toLowerCase().includes(filterAssignee.toLowerCase())
+                ) ?? false;
+              })
+            : res.results;
+
           const lines = [
-            `Database ${dbId}: ${res.results.length} entr${res.results.length === 1 ? 'y' : 'ies'}`,
+            `Database ${dbId} [${target.name}]: ${results.length} entr${results.length === 1 ? 'y' : 'ies'}`,
           ];
-          for (const item of res.results) {
+
+          for (const item of results) {
             const obj = item as Record<string, unknown>;
             const title = getTitle(obj);
-            lines.push(`  • ${title} [${item.id}]`);
+            lines.push(`\n• ${title}`);
+            lines.push(`  ID: ${item.id}`);
+
+            // Show all non-empty properties
+            if (obj.properties && typeof obj.properties === 'object') {
+              for (const [key, val] of Object.entries(
+                obj.properties as Record<string, Record<string, unknown>>
+              )) {
+                if (val.type === 'title') continue;
+                const value = parseProperty(val);
+                if (value) lines.push(`  ${key}: ${value}`);
+              }
+            }
           }
-          if (res.has_more) lines.push('  … more entries available');
+
+          if (res.has_more) lines.push('\n… more entries available (increase page_size or narrow filters)');
 
           return ok(lines.join('\n'));
         } catch (e) {
