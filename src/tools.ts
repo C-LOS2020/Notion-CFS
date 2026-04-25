@@ -567,5 +567,175 @@ export function buildTools(workspaces: NotionWorkspace[]): ToolDef[] {
         }
       },
     },
+
+    // ── notion_report_tasks ───────────────────────────────────────────
+    {
+      definition: {
+        name: 'notion_report_tasks',
+        description:
+          'Generate a structured task report from a Notion database. Supports filtering by status, due date window, and overdue detection. Marks overdue items automatically.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            database_id: {
+              type: 'string',
+              description: 'UUID of the tasks database to report on.',
+            },
+            workspace: {
+              type: 'string',
+              description: `Workspace that owns the database: ${wsNames}. Defaults to first.`,
+            },
+            status: {
+              type: 'string',
+              description:
+                'Filter by a specific status value (e.g. "In Progress", "To Do"). Omit to include all statuses.',
+            },
+            status_property: {
+              type: 'string',
+              description: 'Name of the status property in the database (default: "Status").',
+            },
+            date_property: {
+              type: 'string',
+              description: 'Name of the due-date property in the database (default: "Due Date").',
+            },
+            overdue_only: {
+              type: 'boolean',
+              description: 'When true, return only tasks whose due date is in the past.',
+            },
+            due_within_days: {
+              type: 'number',
+              description: 'Return tasks due within the next N days (inclusive of today).',
+            },
+            page_size: {
+              type: 'number',
+              description: 'Max tasks to return (default 50, max 100).',
+            },
+          },
+          required: ['database_id'],
+        },
+      },
+      handler: async (args) => {
+        const dbId = str(args.database_id);
+        const wsName = str(args.workspace) || undefined;
+        const statusFilter = str(args.status) || undefined;
+        const statusProp = str(args.status_property) || 'Status';
+        const dateProp = str(args.date_property) || 'Due Date';
+        const overdueOnly = bool(args.overdue_only, false);
+        const dueWithinDays =
+          typeof args.due_within_days === 'number'
+            ? args.due_within_days
+            : undefined;
+        const pageSize = Math.min(num(args.page_size, 50), 100);
+
+        try {
+          const target = resolveWorkspaces(workspaces, wsName)[0];
+
+          const today = new Date().toISOString().split('T')[0];
+          const filters: object[] = [];
+
+          if (statusFilter) {
+            filters.push({ property: statusProp, status: { equals: statusFilter } });
+          }
+
+          if (overdueOnly) {
+            filters.push({ property: dateProp, date: { before: today } });
+          } else if (dueWithinDays !== undefined) {
+            const future = new Date();
+            future.setDate(future.getDate() + dueWithinDays);
+            const futureStr = future.toISOString().split('T')[0];
+            filters.push({ property: dateProp, date: { on_or_before: futureStr } });
+          }
+
+          const queryParams: Record<string, unknown> = {
+            database_id: dbId,
+            page_size: pageSize,
+            sorts: [{ property: dateProp, direction: 'ascending' }],
+          };
+
+          if (filters.length === 1) queryParams.filter = filters[0];
+          else if (filters.length > 1) queryParams.filter = { and: filters };
+
+          const res = await target.client.databases.query(
+            queryParams as never
+          );
+
+          if (res.results.length === 0) {
+            return ok('No tasks found matching the given filters.');
+          }
+
+          const lines: string[] = [
+            `Task Report — ${target.name}${target.description ? ` (${target.description})` : ''}`,
+            `Database: ${dbId}`,
+            `Tasks: ${res.results.length}${res.has_more ? '+' : ''}`,
+            '',
+          ];
+
+          for (const item of res.results) {
+            const obj = item as Record<string, unknown>;
+            const props =
+              (obj.properties as Record<
+                string,
+                Record<string, unknown>
+              >) ?? {};
+            const title = getTitle(obj);
+
+            let statusVal = '';
+            let dueVal = '';
+            let assigneeVal = '';
+
+            const sp = props[statusProp];
+            if (sp?.type === 'status' && sp.status) {
+              statusVal = str(
+                (sp.status as Record<string, unknown>).name
+              );
+            } else if (sp?.type === 'select' && sp.select) {
+              statusVal = str(
+                (sp.select as Record<string, unknown>).name
+              );
+            }
+
+            const dp = props[dateProp];
+            if (dp?.type === 'date' && dp.date) {
+              dueVal = str((dp.date as Record<string, unknown>).start);
+            }
+
+            const assigneeProp =
+              props['Assignee'] ??
+              props['Assigned To'] ??
+              props['Owner'];
+            if (assigneeProp?.type === 'people') {
+              assigneeVal = (
+                assigneeProp.people as Array<Record<string, unknown>>
+              )
+                .map((p) => str(p.name))
+                .filter(Boolean)
+                .join(', ');
+            }
+
+            const isOverdue = dueVal ? dueVal < today : false;
+            const meta: string[] = [];
+            if (statusVal) meta.push(`Status: ${statusVal}`);
+            if (dueVal)
+              meta.push(`Due: ${dueVal}${isOverdue ? ' [OVERDUE]' : ''}`);
+            if (assigneeVal) meta.push(`Assignee: ${assigneeVal}`);
+
+            lines.push(`• ${title}`);
+            if (meta.length) lines.push(`  ${meta.join(' | ')}`);
+            lines.push(`  ID: ${item.id}`);
+          }
+
+          if (res.has_more)
+            lines.push(
+              '\n… more tasks available — increase page_size or apply filters to narrow results.'
+            );
+
+          return ok(lines.join('\n'));
+        } catch (e) {
+          return fail(
+            `Failed to generate task report: ${(e as Error).message}`
+          );
+        }
+      },
+    },
   ];
 }
