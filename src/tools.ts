@@ -460,6 +460,74 @@ export function buildTools(workspaces: NotionWorkspace[]): ToolDef[] {
       },
     },
 
+    // ── notion_verify_access ──────────────────────────────────────────
+    {
+      definition: {
+        name: 'notion_verify_access',
+        description:
+          'Verify that Claude can reach each configured Notion workspace by calling the Notion API. Reports success (with bot-user details) or failure (with the error) for every workspace.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            workspace: {
+              type: 'string',
+              description: `Workspace to verify: ${wsNames} — or "all" (default).`,
+            },
+          },
+        },
+      },
+      handler: async (args) => {
+        const wsName = str(args.workspace) || undefined;
+
+        let targets: NotionWorkspace[];
+        try {
+          targets = resolveWorkspaces(workspaces, wsName);
+        } catch (e) {
+          return fail((e as Error).message);
+        }
+
+        const lines: string[] = [
+          `Verifying access to ${targets.length} workspace(s)…`,
+          '',
+        ];
+
+        let passed = 0;
+        let failed = 0;
+
+        for (const ws of targets) {
+          try {
+            const me = (await ws.client.users.me({})) as Record<string, unknown>;
+            const botName = str(me.name) || '(unnamed bot)';
+            const botId = str(me.id);
+            const wsInfo =
+              me.bot &&
+              typeof me.bot === 'object' &&
+              (me.bot as Record<string, unknown>).workspace_name
+                ? ` | workspace: ${str((me.bot as Record<string, unknown>).workspace_name)}`
+                : '';
+            lines.push(
+              `✓ ${ws.name}${ws.description ? ` (${ws.description})` : ''}\n` +
+              `  Bot: "${botName}" [${botId}]${wsInfo}`
+            );
+            passed++;
+          } catch (e) {
+            lines.push(
+              `✗ ${ws.name}${ws.description ? ` (${ws.description})` : ''}\n` +
+              `  Error: ${(e as Error).message}`
+            );
+            failed++;
+          }
+        }
+
+        lines.push('');
+        lines.push(`Result: ${passed} passed, ${failed} failed.`);
+
+        return failed > 0
+          ? { content: [{ type: 'text', text: lines.join('\n') }], isError: true }
+          : ok(lines.join('\n'));
+      },
+    },
+
     // ── notion_query_database ─────────────────────────────────────────
     {
       definition: {
