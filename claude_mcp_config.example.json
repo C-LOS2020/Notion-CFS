@@ -1,21 +1,44 @@
 {
-  "_comment": "Add this block to ~/.claude.json under 'mcpServers' to register Notion-CFS with Claude Code.",
+  "_comment": "Copy this file, fill in real tokens, then merge the 'mcpServers' block into ~/.claude.json. Restart Claude Code after saving.",
+  "_setup": [
+    "1. Create one Notion integration per workspace at https://www.notion.so/my-integrations",
+    "2. For each integration, share it with the pages/databases it should access inside Notion",
+    "3. Replace every 'secret_..._token_here' value below with the real integration token",
+    "4. Set the absolute path to dist/index.js in 'args'",
+    "5. Restart Claude Code, then run the notion_verify_access tool to confirm all connections"
+  ],
   "mcpServers": {
     "notion-cfs": {
       "command": "node",
       "args": ["/absolute/path/to/Notion-CFS/dist/index.js"],
       "env": {
-        "NOTION_TOKEN_1": "secret_bale_token_here",
-        "NOTION_WORKSPACE_NAME_1": "bale",
-        "NOTION_WORKSPACE_DESCRIPTION_1": "B.A.L.E. workspace",
+        "NOTION_TOKEN_1": "secret_propane_plus_token_here",
+        "NOTION_WORKSPACE_NAME_1": "propane-plus",
+        "NOTION_WORKSPACE_DESCRIPTION_1": "Propane Plus Bahamas Co. Ltd",
 
-        "NOTION_TOKEN_2": "secret_fusion_token_here",
-        "NOTION_WORKSPACE_NAME_2": "fusion",
-        "NOTION_WORKSPACE_DESCRIPTION_2": "Fusion Superplex",
+        "NOTION_TOKEN_2": "secret_r_and_r_token_here",
+        "NOTION_WORKSPACE_NAME_2": "r-and-r",
+        "NOTION_WORKSPACE_DESCRIPTION_2": "R&R Space",
 
-        "NOTION_TOKEN_3": "secret_personal_token_here",
-        "NOTION_WORKSPACE_NAME_3": "personal",
-        "NOTION_WORKSPACE_DESCRIPTION_3": "Personal notes"
+        "NOTION_TOKEN_3": "secret_vmh_token_here",
+        "NOTION_WORKSPACE_NAME_3": "vmh",
+        "NOTION_WORKSPACE_DESCRIPTION_3": "VMH Space (VM Holdings Ltd)",
+
+        "NOTION_TOKEN_4": "secret_sgs_token_here",
+        "NOTION_WORKSPACE_NAME_4": "sgs",
+        "NOTION_WORKSPACE_DESCRIPTION_4": "SGS Space (Symphony Global Services)",
+
+        "NOTION_TOKEN_5": "secret_gte_token_here",
+        "NOTION_WORKSPACE_NAME_5": "gte",
+        "NOTION_WORKSPACE_DESCRIPTION_5": "GTE Space (Greentech Energy)",
+
+        "NOTION_TOKEN_6": "secret_vsb_token_here",
+        "NOTION_WORKSPACE_NAME_6": "vsb",
+        "NOTION_WORKSPACE_DESCRIPTION_6": "VSB Space",
+
+        "NOTION_TOKEN_7": "secret_carlos_notion_token_here",
+        "NOTION_WORKSPACE_NAME_7": "carlos-notion",
+        "NOTION_WORKSPACE_DESCRIPTION_7": "Carlos's Notion (Plus Plan)"
       }
     }
   }
