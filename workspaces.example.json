@@ -1,19 +1,39 @@
 {
   "workspaces": [
     {
-      "name": "bale",
-      "token": "secret_your_bale_workspace_token",
-      "description": "B.A.L.E. content, branding, and roadmap workspace"
+      "name": "propane-plus",
+      "token": "secret_your_propane_plus_token",
+      "description": "Propane Plus Bahamas Co. Ltd"
     },
     {
-      "name": "fusion",
-      "token": "secret_your_fusion_workspace_token",
-      "description": "Fusion Superplex solar installation operations"
+      "name": "r-and-r",
+      "token": "secret_your_r_and_r_token",
+      "description": "R&R Space"
     },
     {
-      "name": "personal",
-      "token": "secret_your_personal_token",
-      "description": "Personal notes, reading list, and daily reflections"
+      "name": "vmh",
+      "token": "secret_your_vmh_token",
+      "description": "VMH Space (VM Holdings Ltd)"
+    },
+    {
+      "name": "sgs",
+      "token": "secret_your_sgs_token",
+      "description": "SGS Space (Symphony Global Services)"
+    },
+    {
+      "name": "gte",
+      "token": "secret_your_gte_token",
+      "description": "GTE Space (Greentech Energy)"
+    },
+    {
+      "name": "vsb",
+      "token": "secret_your_vsb_token",
+      "description": "VSB Space"
+    },
+    {
+      "name": "carlos-notion",
+      "token": "secret_your_carlos_notion_token",
+      "description": "Carlos's Notion (Plus Plan)"
     }
   ]
 }
