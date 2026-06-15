@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vehicle Maintenance</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- SVG sprite -->
+    <svg class="sprite" aria-hidden="true">
+      <symbol id="icon-alert" viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></symbol>
+      <symbol id="icon-building" viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v16"/><path d="M17 8h1a2 2 0 0 1 2 2v11"/><path d="M8 7h4"/><path d="M8 11h4"/><path d="M8 15h4"/></symbol>
+      <symbol id="icon-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24"><path d="m20 6-11 11-5-5"/></symbol>
+      <symbol id="icon-clipboard" viewBox="0 0 24 24"><path d="M9 4h6"/><path d="M10 2h4a2 2 0 0 1 2 2v1H8V4a2 2 0 0 1 2-2Z"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"/><path d="M9 12h6"/><path d="M9 16h4"/></symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></symbol>
+      <symbol id="icon-gauge" viewBox="0 0 24 24"><path d="M4 14a8 8 0 1 1 16 0"/><path d="M12 14 16 9"/><path d="M8 17h8"/></symbol>
+      <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 6v6h-6"/><path d="M4 18v-6h6"/><path d="M18.5 9A7 7 0 0 0 6.3 6.3L4 8.5"/><path d="M5.5 15A7 7 0 0 0 17.7 17.7L20 15.5"/></symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></symbol>
+      <symbol id="icon-truck" viewBox="0 0 24 24"><path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+      <symbol id="icon-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a5 5 0 0 0 6.9 6.9L13 21.8 8.2 17l8.6-8.6Z"/><path d="m8.2 17-5-5 4-4 5 5"/></symbol>
+      <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+    </svg>
+
+    <div class="app-shell">
+
+      <!-- Top bar -->
+      <header class="topbar">
+        <div class="brand-lockup">
+          <span class="brand-mark">
+            <svg class="icon"><use href="#icon-wrench"/></svg>
+          </span>
+          <div class="brand-text">
+            <p class="eyebrow">Fleet operations</p>
+            <h1>Vehicle Maintenance</h1>
+          </div>
+        </div>
+        <nav class="company-tabs" id="companyTabs"></nav>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="editCompaniesButton" title="Edit companies">
+            <svg class="icon"><use href="#icon-building"/></svg>
+          </button>
+          <button class="icon-btn" id="resetButton" title="Reset demo data">
+            <svg class="icon"><use href="#icon-refresh"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Side nav -->
+      <nav class="sidenav">
+        <a class="nav-link" href="#dashboard" data-page="dashboard">
+          <svg class="icon"><use href="#icon-grid"/></svg><span>Dashboard</span>
+        </a>
+        <a class="nav-link" href="#fleet" data-page="fleet">
+          <svg class="icon"><use href="#icon-truck"/></svg><span>Fleet</span>
+        </a>
+        <a class="nav-link" href="#orders" data-page="orders">
+          <svg class="icon"><use href="#icon-clipboard"/></svg><span>Work Orders</span>
+          <span class="nav-badge" id="ordersBadge"></span>
+        </a>
+        <a class="nav-link" href="#history" data-page="history">
+          <svg class="icon"><use href="#icon-wrench"/></svg><span>Service History</span>
+        </a>
+      </nav>
+
+      <!-- Main content -->
+      <main class="main-content" id="mainContent">
+
+        <!-- PAGE: Dashboard -->
+        <section class="page" id="page-dashboard">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Overview</p>
+              <h2 id="dash-company-title">Company</h2>
+            </div>
+            <div class="page-actions">
+              <button class="ghost-btn" id="dash-log-service">
+                <svg class="icon"><use href="#icon-wrench"/></svg><span>Log service</span>
+              </button>
+              <button class="primary-btn" id="dash-new-order">
+                <svg class="icon"><use href="#icon-plus"/></svg><span>Work order</span>
+              </button>
+            </div>
+          </div>
+          <div class="kpi-strip" id="dashKpis"></div>
+          <div class="dash-body">
+            <section class="dash-card">
+              <header class="card-header">
+                <div class="card-header-icon amber"><svg class="icon"><use href="#icon-alert"/></svg></div>
+                <h3>Attention Needed</h3>
+              </header>
+              <div id="dashAttentionList" class="attention-rows"></div>
+            </section>
+            <section class="dash-card">
+              <header class="card-header">
+                <div class="card-header-icon green"><svg class="icon"><use href="#icon-calendar"/></svg></div>
+                <h3>Upcoming PM (30 days)</h3>
+              </header>
+              <div id="dashUpcomingList" class="upcoming-rows"></div>
+            </section>
+            <section class="dash-card dash-card--wide">
+              <header class="card-header">
+                <div class="card-header-icon blue"><svg class="icon"><use href="#icon-clipboard"/></svg></div>
+                <h3>Open Work Orders</h3>
+                <a class="card-link" href="#orders">View all &rarr;</a>
+              </header>
+              <div id="dashOrdersList" class="order-rows"></div>
+            </section>
+            <section class="dash-card">
+              <header class="card-header">
+                <div class="card-header-icon graphite"><svg class="icon"><use href="#icon-truck"/></svg></div>
+                <h3>Fleet Snapshot</h3>
+                <a class="card-link" href="#fleet">View fleet &rarr;</a>
+              </header>
+              <div id="dashFleetList" class="fleet-rows"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- PAGE: Fleet -->
+        <section class="page" id="page-fleet" hidden>
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Fleet register</p>
+              <h2 id="fleet-company-title">Company</h2>
+            </div>
+            <div class="page-actions">
+              <label class="search-field">
+                <svg class="icon"><use href="#icon-search"/></svg>
+                <input id="fleetSearch" type="search" placeholder="Search unit, driver, plate&hellip;" autocomplete="off" />
+              </label>
+              <button class="primary-btn" id="fleet-new-order">
+                <svg class="icon"><use href="#icon-plus"/></svg><span>Work order</span>
+              </button>
+            </div>
+          </div>
+          <div class="filter-row">
+            <button class="filter is-active" type="button" data-filter="all">All</button>
+            <button class="filter" type="button" data-filter="due">Due soon</button>
+            <button class="filter" type="button" data-filter="overdue">Overdue</button>
+            <button class="filter" type="button" data-filter="shop">In shop</button>
+          </div>
+          <div class="vehicle-grid" id="vehicleGrid"></div>
+        </section>
+
+        <!-- PAGE: Vehicle Detail -->
+        <section class="page" id="page-vehicle" hidden>
+          <div class="page-header">
+            <button class="back-btn" id="vehicleBackBtn">
+              <svg class="icon"><use href="#icon-arrow-left"/></svg><span>Back to fleet</span>
+            </button>
+            <div class="vehicle-heading">
+              <p class="eyebrow" id="detailCompany">Company</p>
+              <h2 id="detailName">Vehicle</h2>
+              <p class="muted" id="detailMeta"></p>
+            </div>
+            <span class="status-chip" id="detailRiskBadge">Ready</span>
+            <div class="page-actions">
+              <button class="ghost-btn" id="detail-log-service">
+                <svg class="icon"><use href="#icon-wrench"/></svg><span>Log service</span>
+              </button>
+              <button class="primary-btn" id="detail-new-order">
+                <svg class="icon"><use href="#icon-plus"/></svg><span>Work order</span>
+              </button>
+            </div>
+          </div>
+          <div class="vehicle-metrics" id="vehicleMetrics"></div>
+          <nav class="tab-nav" id="detailTabs">
+            <button class="tab-btn is-active" data-detail-tab="inspection">Daily checklist</button>
+            <button class="tab-btn" data-detail-tab="logs">Log sheet</button>
+            <button class="tab-btn" data-detail-tab="reports">Reports</button>
+            <button class="tab-btn" data-detail-tab="schedule">Schedule</button>
+          </nav>
+          <div class="tab-panel" data-tab-panel="inspection">
+            <div class="tab-panel-header">
+              <span class="date-pill" id="checklistScore">0 OK / 0 repair</span>
+              <div class="tab-panel-actions">
+                <button class="ghost-btn slim" id="newDailyInspectionButton">
+                  <svg class="icon"><use href="#icon-calendar"/></svg> Today
+                </button>
+                <button class="primary-btn slim" id="saveInspectionButton">
+                  <svg class="icon"><use href="#icon-check"/></svg> Save log
+                </button>
+              </div>
+            </div>
+            <div id="inspectionChecklist" class="checklist"></div>
+          </div>
+          <div class="tab-panel" data-tab-panel="logs" hidden>
+            <div class="tab-panel-header">
+              <h3 style="margin:0">Vehicle log sheet</h3>
+              <button class="ghost-btn slim" id="exportInspectionButton">
+                <svg class="icon"><use href="#icon-download"/></svg> Export CSV
+              </button>
+            </div>
+            <div id="vehicleLogSheet" class="log-sheet"></div>
+          </div>
+          <div class="tab-panel" data-tab-panel="reports" hidden>
+            <div class="report-summary" id="reportSummary"></div>
+            <div class="report-findings" id="reportFindings"></div>
+          </div>
+          <div class="tab-panel" data-tab-panel="schedule" hidden>
+            <div class="progress-wrap">
+              <span id="mileageProgressLabel">Mileage interval</span>
+              <div class="progress-track"><span id="mileageProgressBar"></span></div>
+            </div>
+            <dl class="spec-list" id="vehicleSpecs"></dl>
+            <h3 class="section-subtitle">Maintenance history</h3>
+            <div class="history-list" id="serviceHistory"></div>
+          </div>
+        </section>
+
+        <!-- PAGE: Work Orders -->
+        <section class="page" id="page-orders" hidden>
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Maintenance queue</p>
+              <h2>Work Orders</h2>
+            </div>
+            <div class="page-actions">
+              <button class="ghost-btn" id="orders-export">
+                <svg class="icon"><use href="#icon-download"/></svg><span>Export CSV</span>
+              </button>
+              <button class="primary-btn" id="orders-new">
+                <svg class="icon"><use href="#icon-plus"/></svg><span>New order</span>
+              </button>
+            </div>
+          </div>
+          <div id="workOrderList" class="order-list"></div>
+        </section>
+
+        <!-- PAGE: Service History -->
+        <section class="page" id="page-history" hidden>
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Service records</p>
+              <h2>Maintenance History</h2>
+            </div>
+            <div class="page-actions">
+              <button class="primary-btn" id="history-log-service">
+                <svg class="icon"><use href="#icon-plus"/></svg><span>Log service</span>
+              </button>
+            </div>
+          </div>
+          <div id="allServiceHistory" class="history-grid"></div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Dialogs -->
+    <dialog id="serviceDialog">
+      <form class="form-card" id="serviceForm">
+        <header class="form-header">
+          <div><p class="eyebrow">Maintenance record</p><h2>Log service</h2></div>
+          <button class="icon-btn" type="button" data-close-dialog><svg class="icon"><use href="#icon-close"/></svg></button>
+        </header>
+        <label>Vehicle<select id="serviceVehicle" required></select></label>
+        <div class="form-grid">
+          <label>Service date<input id="serviceDate" type="date" required /></label>
+          <label>Odometer<input id="serviceOdometer" type="number" min="0" step="1" required /></label>
+        </div>
+        <div class="form-grid">
+          <label>Service type
+            <select id="serviceType" required>
+              <option>PM Service</option><option>Oil and filters</option><option>Tires</option>
+              <option>Brakes</option><option>Inspection</option><option>Repair</option>
+            </select>
+          </label>
+          <label>Cost<input id="serviceCost" type="number" min="0" step="0.01" required /></label>
+        </div>
+        <label>Vendor<input id="serviceVendor" type="text" maxlength="60" required /></label>
+        <label>Notes<textarea id="serviceNotes" maxlength="180"></textarea></label>
+        <menu>
+          <button class="ghost-btn" type="button" data-close-dialog>Cancel</button>
+          <button class="primary-btn" type="submit">Save service</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="workOrderDialog">
+      <form class="form-card" id="workOrderForm">
+        <header class="form-header">
+          <div><p class="eyebrow">Maintenance queue</p><h2>New work order</h2></div>
+          <button class="icon-btn" type="button" data-close-dialog><svg class="icon"><use href="#icon-close"/></svg></button>
+        </header>
+        <label>Vehicle<select id="orderVehicle" required></select></label>
+        <label>Work order<input id="orderTitle" type="text" maxlength="90" required /></label>
+        <div class="form-grid">
+          <label>Priority
+            <select id="orderPriority" required>
+              <option>High</option><option selected>Medium</option><option>Low</option>
+            </select>
+          </label>
+          <label>Due date<input id="orderDue" type="date" required /></label>
+        </div>
+        <div class="form-grid">
+          <label>Assigned to<input id="orderAssignee" type="text" maxlength="50" required /></label>
+          <label>Type
+            <select id="orderType" required>
+              <option>Preventive</option><option>Repair</option>
+              <option>Inspection</option><option>Registration</option><option>Road call</option>
+            </select>
+          </label>
+        </div>
+        <label>Notes<textarea id="orderNotes" maxlength="180"></textarea></label>
+        <menu>
+          <button class="ghost-btn" type="button" data-close-dialog>Cancel</button>
+          <button class="primary-btn" type="submit">Create order</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="companyDialog">
+      <form class="form-card" id="companyForm">
+        <header class="form-header">
+          <div><p class="eyebrow">Setup</p><h2>Company names</h2></div>
+          <button class="icon-btn" type="button" data-close-dialog><svg class="icon"><use href="#icon-close"/></svg></button>
+        </header>
+        <div class="company-fields" id="companyFields"></div>
+        <menu>
+          <button class="ghost-btn" type="button" id="addCompanyButton">
+            <svg class="icon"><use href="#icon-plus"/></svg> Add company
+          </button>
+          <button class="ghost-btn" type="button" data-close-dialog>Cancel</button>
+          <button class="primary-btn" type="submit">Save names</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
